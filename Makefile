@@ -7,14 +7,15 @@ GOFLAGS ?= -buildvcs=false
 
 export GOFLAGS
 
-.PHONY: tidy fmt test ci build run install clean cross-build help
+.PHONY: tidy fmt test ci build run install clean cross-build help prek
 
 help:
 	@echo "Targets:"
 	@echo "  make tidy         - go mod tidy"
 	@echo "  make fmt          - gofmt ./cmd ./internal"
 	@echo "  make test         - run unit tests"
-	@echo "  make ci           - fmt check + vet + tests + build"
+	@echo "  make prek         - run prek validate + all hooks"
+	@echo "  make ci           - tidy + fmt check + vet + prek + tests + build"
 	@echo "  make build        - build local binary to ./$(BIN_PATH)"
 	@echo "  make run          - run CLI (pass ARGS='...')"
 	@echo "  make install      - install binary to GOPATH/bin"
@@ -30,10 +31,21 @@ fmt:
 test:
 	go test ./... -count=1
 
+prek:
+	prek validate-config
+	prek run --all-files
+
 ci:
+	go mod tidy
+	@if [ -f go.sum ]; then \
+		git diff --exit-code -- go.mod go.sum; \
+	else \
+		git diff --exit-code -- go.mod; \
+	fi
 	@unformatted=$$(gofmt -l ./cmd ./internal); \
 	if [ -n "$$unformatted" ]; then echo "Unformatted files:"; echo "$$unformatted"; exit 1; fi
 	go vet ./...
+	$(MAKE) prek
 	go test ./... -count=1
 	go build -v $(CMD)
 
