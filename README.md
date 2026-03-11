@@ -51,9 +51,15 @@ aria2-cli resume <gid>
 aria2-cli pause-all
 aria2-cli resume-all
 
-# Remove
+# Remove active/waiting downloads
 aria2-cli remove <gid>
 aria2-cli force-remove <gid>
+
+# Remove stopped download results
+aria2-cli remove-result <gid>
+
+# Purge all stopped download results
+aria2-cli purge
 ```
 
 ### Status
@@ -100,11 +106,13 @@ aria2-cli set-global-option max-overall-download-limit=1M
 
 ```bash
 aria2-cli save-session
-aria2-cli purge
-aria2-cli remove-result <gid>
+aria2-cli purge            # clear all stopped download results
+aria2-cli remove-result <gid>  # remove one stopped download result by GID
 aria2-cli shutdown
 aria2-cli force-shutdown
 ```
+
+`remove` / `force-remove` are for active or waiting downloads. To delete entries already shown in `list stopped`, use `remove-result`, or use `purge` to clear the entire stopped list. These commands only remove aria2's download result records; they do not delete downloaded files.
 
 ### JSON output for scripting
 

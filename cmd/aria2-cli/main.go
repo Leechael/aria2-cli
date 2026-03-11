@@ -116,8 +116,8 @@ USAGE
 
 DOWNLOAD COMMANDS
   add              Add download by URI(s)
-  remove, rm       Remove a download
-  force-remove     Force remove a download
+  remove, rm       Remove an active/waiting download
+  force-remove     Force remove an active/waiting download
   pause            Pause a download
   pause-all        Pause all downloads
   unpause, resume  Resume a paused download
@@ -141,8 +141,8 @@ OPTION COMMANDS
 
 SESSION COMMANDS
   save-session     Save current session to file
-  purge            Purge completed/error/removed results
-  remove-result    Remove a specific download result
+  purge            Clear all stopped download results
+  remove-result    Remove one stopped download result by GID
   shutdown         Gracefully shutdown aria2
   force-shutdown   Force shutdown aria2
 
@@ -246,7 +246,7 @@ func cmdRemove(c *rpc.Client, p *output.Printer, args []string) error {
 USAGE
   aria2-cli remove <gid>
 
-Removes the download identified by GID. This does not remove downloaded files.
+Removes an active or waiting download identified by GID. For entries already in the stopped list, use "remove-result" instead. This does not remove downloaded files.
 
 EXAMPLES
   $ aria2-cli remove 2089b05ecca3d829
@@ -273,7 +273,7 @@ func cmdForceRemove(c *rpc.Client, p *output.Printer, args []string) error {
 USAGE
   aria2-cli force-remove <gid>
 
-Like remove, but does not wait for BitTorrent to contact tracker first.
+Like remove, but does not wait for BitTorrent to contact tracker first. This applies to active or waiting downloads; for stopped results, use "remove-result".
 
 EXAMPLES
   $ aria2-cli force-remove 2089b05ecca3d829
@@ -429,7 +429,8 @@ USAGE
   aria2-cli list [active|waiting|stopped]
 
 Without a filter, lists all downloads. Use a filter to show only
-active, waiting, or stopped downloads.
+active, waiting, or stopped downloads. Entries in the stopped list can be
+removed with "remove-result" or cleared in bulk with "purge".
 
 ALIASES
   ls
@@ -543,7 +544,7 @@ func cmdPurge(c *rpc.Client, p *output.Printer, args []string) error {
 USAGE
   aria2-cli purge
 
-Clears the list of stopped downloads. Does not remove downloaded files.
+Clears all stopped download results, including completed/error/removed entries. Does not remove downloaded files.
 
 EXAMPLES
   $ aria2-cli purge
@@ -567,7 +568,7 @@ func cmdRemoveResult(c *rpc.Client, p *output.Printer, args []string) error {
 USAGE
   aria2-cli remove-result <gid>
 
-Removes the completed/error/removed download result identified by GID.
+Removes the stopped download result identified by GID, including completed/error/removed entries.
 
 EXAMPLES
   $ aria2-cli remove-result 2089b05ecca3d829
