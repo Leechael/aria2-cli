@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -48,6 +49,8 @@ func main() {
 	switch cmd {
 	case "add":
 		err = cmdAdd(client, printer, cmdArgs)
+	case "add-torrent":
+		err = cmdAddTorrent(client, printer, cmdArgs)
 	case "remove", "rm":
 		err = cmdRemove(client, printer, cmdArgs)
 	case "force-remove":
@@ -116,6 +119,7 @@ USAGE
 
 DOWNLOAD COMMANDS
   add              Add download by URI(s)
+  add-torrent      Add download from a local torrent file
   remove, rm       Remove an active/waiting download
   force-remove     Force remove an active/waiting download
   pause            Pause a download
@@ -236,6 +240,55 @@ EXAMPLES
 	}
 
 	p.Hint("download added")
+	return p.Print(gid)
+}
+
+func cmdAddTorrent(c *rpc.Client, p *output.Printer, args []string) error {
+	if wantHelp(args) || len(args) == 0 {
+		fmt.Fprintf(os.Stderr, `Add a new download from a local torrent file.
+
+USAGE
+  aria2-cli add-torrent <file.torrent> [key=value...]
+
+Options are passed as key=value pairs.
+
+EXAMPLES
+  # Download a torrent
+  $ aria2-cli add-torrent ./ubuntu.torrent
+
+  # Download to a custom directory
+  $ aria2-cli add-torrent ./ubuntu.torrent dir=/downloads
+
+  # Continue seeding after download completes
+  $ aria2-cli add-torrent ./ubuntu.torrent seed-time=60
+`)
+		if len(args) == 0 {
+			return fmt.Errorf("missing torrent file")
+		}
+		return nil
+	}
+
+	content, err := os.ReadFile(args[0])
+	if err != nil {
+		return fmt.Errorf("read torrent file: %w", err)
+	}
+
+	params := []any{base64.StdEncoding.EncodeToString(content)}
+	if opts := parseKV(args[1:]); len(opts) > 0 {
+		params = append(params, opts)
+	}
+
+	result, err := c.Call("aria2.addTorrent", params...)
+	if err != nil {
+		return err
+	}
+
+	var gid string
+	if err := json.Unmarshal(result, &gid); err != nil {
+		return err
+	}
+
+	p.Hint("torrent download added")
 	return p.Print(gid)
 }
 
